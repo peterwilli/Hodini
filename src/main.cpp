@@ -2,6 +2,10 @@
 #include <WebSocketsServer.h>
 #include <Arduino.h>
 #include <FastLED.h>
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
+
 #include "Config.h"
 
 String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
@@ -60,9 +64,6 @@ String html_1 = R"=====(
 WiFiServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-char ssid[] = "Popiejopie"; // use your own network ssid and password
-char pass[] = "bCn1N5Hq";
-
 CRGB leds[NUM_LEDS];
 uint8_t currentTargetColor[3];
 
@@ -107,28 +108,9 @@ void setup()
   Serial.println("Serial started at 115200");
   Serial.println();
 
-  // Connect to a WiFi network
-  Serial.print(F("Connecting to "));
-  Serial.println(ssid);
-  WiFi.begin(ssid, pass);
-
-  // connection with timeout
-  int count = 0;
-  while ((WiFi.status() != WL_CONNECTED) && count < 17)
-  {
-    Serial.print(".");
-    delay(500);
-    count++;
-  }
-
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.println("");
-    Serial.print("Failed to connect to ");
-    Serial.println(ssid);
-    while (1)
-      ;
-  }
+  WiFiManager wifiManager;
+  // wifiManager.resetSettings();
+  wifiManager.autoConnect("HodiniAP");
 
   Serial.println("");
   Serial.println(F("[CONNECTED]"));
