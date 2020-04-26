@@ -17,14 +17,16 @@ String html_1 = R"=====(
     #main   { display: table; width: 300px; margin: auto;  padding: 10px 10px 10px 10px; border: 3px solid blue; border-radius: 10px; text-align:center;} 
     .button { width:200px; height:40px; font-size: 110%;  }
   </style>
-  <title>Websockets</title>
+  <title>Hodini Testing</title>
 </head>
 <body>
   <div id='main'>
     <h3>LED CONTROL</h3>
     <div id='content'>
-      <p id='LED_status'>LED is off</p>
-      <button id='BTN_LED'class="button">Turn on the LED</button>
+      R: <input id="color_r" type="number" max="255" min="0" /><br />
+      G: <input id="color_g" type="number" max="255" min="0" /><br />
+      B: <input id="color_b" type="number" max="255" min="0" /><br />
+      <button id='BTN_LED'class="button">Send</button>
     </div>
     <br />
    </div>
@@ -40,15 +42,11 @@ String html_1 = R"=====(
   document.getElementById('BTN_LED').addEventListener('click', buttonClicked);
   function buttonClicked()
   {   
-    var btn = document.getElementById('BTN_LED')
-    var btnText = btn.textContent || btn.innerText;
-    if (btnText ==='Turn on the LED') { btn.innerHTML = "Turn off the LED"; document.getElementById('LED_status').innerHTML = 'LED is on';  sendText('1'); }  
-    else                              { btn.innerHTML = "Turn on the LED";  document.getElementById('LED_status').innerHTML = 'LED is off'; sendText('0'); }
-  }
- 
-  function sendText(data)
-  {
-    Socket.send(data);
+    const buffer = new Uint8Array(3);
+    buffer[0] = document.getElementById('color_r').value;
+    buffer[1] = document.getElementById('color_g').value;
+    buffer[2] = document.getElementById('color_b').value;
+    Socket.send(buffer);
   }
  
   window.onload = function(e)
@@ -73,6 +71,12 @@ void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
   if ((type == WStype_BIN || type == WStype_TEXT) && length == 3)
   {
     memcpy(currentTargetColor, payload, length);
+    // for (int i = 0; i < length; i++)
+    // {
+    //   Serial.print(payload[i]);
+    //   Serial.print(":");
+    // }
+    // Serial.println();
   }
   else
   {
@@ -82,6 +86,7 @@ void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
     for (int i = 0; i < length; i++)
     {
       Serial.print((char)payload[i]);
+      Serial.print(":");
     }
     Serial.println();
   }
@@ -89,7 +94,8 @@ void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
 
 void initLeds()
 {
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  FastLED.setBrightness(255);
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 }
 
 void setup()
@@ -160,7 +166,7 @@ void ledTick()
   else if(currentTargetColor[2] < leds[0].b) {
     leds[0].b -= 1;
   }
-  
+
   for (uint8_t i = 1; i < NUM_LEDS; i++)
   {
     leds[i].r = leds[0].r;
@@ -173,7 +179,7 @@ void ledTick()
 void loop()
 {
   webSocket.loop();
-  if(millis() % 25 == 0) {
+  if(millis() % 50 == 0) {
     ledTick();
   }
 

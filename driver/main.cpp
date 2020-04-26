@@ -22,9 +22,9 @@ void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
 
 uint8_t initSocket() {
     // Set logging to be pretty verbose (everything except message payloads)
-    c.set_access_channels(websocketpp::log::alevel::all);
-    c.clear_access_channels(websocketpp::log::alevel::frame_payload);
-    c.set_error_channels(websocketpp::log::elevel::all);
+    // c.set_access_channels(websocketpp::log::alevel::all);
+    // c.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    // c.set_error_channels(websocketpp::log::elevel::all);
 
     // Initialize ASIO
     c.init_asio();
