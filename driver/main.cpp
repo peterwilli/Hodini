@@ -4,13 +4,57 @@
 #include <math.h>
 #include <chrono>
 #include <thread>
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
 
+#include <iostream>
+#define VERSION "0.1"
+std::string uri = "ws://192.168.1.8:81";
 using namespace std;
 
-#define VERSION "0.1"
+typedef websocketpp::client<websocketpp::config::asio_client> client;
+client c;
+client::connection_ptr con;
+
+void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
+	std::cout << msg->get_payload() << std::endl;
+}
+
+uint8_t initSocket() {
+    // Set logging to be pretty verbose (everything except message payloads)
+    c.set_access_channels(websocketpp::log::alevel::all);
+    c.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    c.set_error_channels(websocketpp::log::elevel::all);
+
+    // Initialize ASIO
+    c.init_asio();
+
+    // Register our message handler
+    c.set_message_handler(&on_message);
+
+    websocketpp::lib::error_code ec;
+    con = c.get_connection(uri, ec);
+    if (ec) {
+        std::cout << "could not create connection because: " << ec.message() << std::endl;
+        return 0;
+    }
+
+    // Note that connect here only requests a connection. No network messages are
+    // exchanged until the event loop starts running in the next line.
+    c.connect(con);
+
+    // Create a thread to run the ASIO io_service event loop
+    websocketpp::lib::thread *asio_thread = new websocketpp::lib::thread(&client::run, &c);
+    return 0;
+}
+
+void sendColor(uint8_t rgb[]) {
+    con->send(rgb, 3, websocketpp::frame::opcode::binary);
+}
 
 int main(int, char **)
 {
+    initSocket();
     uint8_t gridSize = 25;
     XColor c;
     Display *d = XOpenDisplay((char *)NULL);
@@ -41,6 +85,8 @@ int main(int, char **)
             }
         }
         printf("Average color is: R: %f G: %f B: %f\n", avgColorBufR, avgColorBufG, avgColorBufB);
+        uint8_t rgb[] { avgColorBufR, avgColorBufG, avgColorBufB };
+        sendColor(rgb);
         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     return 0;

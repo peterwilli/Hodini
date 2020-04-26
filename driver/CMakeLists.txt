@@ -7,8 +7,11 @@ message(STATUS "X11_INCLUDE_DIR = ${X11_INCLUDE_DIR}")
 message(STATUS "X11_LIBRARIES = ${X11_LIBRARIES}")
 
 include_directories(${X11_INCLUDE_DIR})
-
 link_directories(${X11_LIBRARIES})
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+include_directories(${PROJECT_SOURCE_DIR})
+FIND_PACKAGE( Boost 1.40 COMPONENTS program_options system REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 add_executable (hodini main.cpp)
-target_link_libraries(hodini ${X11_LIBRARIES})
+TARGET_LINK_LIBRARIES(hodini ${X11_LIBRARIES} ${Boost_LIBRARIES})
