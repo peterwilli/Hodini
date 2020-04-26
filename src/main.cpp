@@ -69,7 +69,6 @@ CRGB leds[NUM_LEDS];
 
 void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length)
 {
-  Serial.printf("Got %d bytes\n", length);
   if((type == WStype_BIN || type == WStype_TEXT) && length == 3)
   {
     for(uint8_t i = 0; i < NUM_LEDS; i++) {
@@ -79,7 +78,6 @@ void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length)
     }
     FastLED.show();
   }
- 
   else 
   {
     Serial.print("WStype = ");   Serial.println(type);  

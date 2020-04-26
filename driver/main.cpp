@@ -49,6 +49,7 @@ uint8_t initSocket() {
 }
 
 void sendColor(uint8_t rgb[]) {
+    printf("Average color is: R: %d G: %d B: %d\n", rgb[0], rgb[1], rgb[2]);
     con->send(rgb, 3, websocketpp::frame::opcode::binary);
 }
 
@@ -68,8 +69,9 @@ int main(int, char **)
     const double totalPixelsMeasure = gridW * gridH;
     
     printf("Hodini Driver %s. Screen resolution is %dx%d. Split to grid %dx%d\n", VERSION, s->width, s->height, gridW, gridH);
+    double avgColorBufOld[] = {0, 0, 0};
     while(true) {
-        double avgColorBufR = 0, avgColorBufG = 0, avgColorBufB = 0;
+        double avgColorBuf[] = {0, 0, 0};
         for (uint16_t x = 0; x < gridW; x++)
         {
             for (uint16_t y = 0; y < gridH; y++)
@@ -79,15 +81,19 @@ int main(int, char **)
                 c.pixel = XGetPixel(image, 0, 0);
                 XFree(image);
                 XQueryColor(d, colorMap, &c);
-                avgColorBufR += ((c.red / 256) / totalPixelsMeasure);
-                avgColorBufG += ((c.green / 256) / totalPixelsMeasure);
-                avgColorBufB += ((c.blue / 256) / totalPixelsMeasure);
+                avgColorBuf[0] += ((c.red / 256) / totalPixelsMeasure);
+                avgColorBuf[1] += ((c.green / 256) / totalPixelsMeasure);
+                avgColorBuf[2] += ((c.blue / 256) / totalPixelsMeasure);
             }
         }
-        printf("Average color is: R: %f G: %f B: %f\n", avgColorBufR, avgColorBufG, avgColorBufB);
-        uint8_t rgb[] { avgColorBufR, avgColorBufG, avgColorBufB };
-        sendColor(rgb);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        for(uint8_t i = 0; i < 3; i++) {
+            if(abs(avgColorBuf[i] - avgColorBufOld[i]) > 5) {
+                uint8_t rgb[] { (uint8_t) avgColorBuf[0], (uint8_t) avgColorBuf[1], (uint8_t) avgColorBuf[2] };
+                memcpy(&avgColorBufOld, &avgColorBuf, sizeof(avgColorBufOld));
+                sendColor(rgb);
+                break;
+            }
+        }
     }
     return 0;
 }
