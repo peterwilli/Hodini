@@ -5,7 +5,7 @@
 #include "Config.h"
 
 String header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
- 
+
 String html_1 = R"=====(
 <!DOCTYPE html>
 <html>
@@ -58,88 +58,134 @@ String html_1 = R"=====(
 </script>
 </html>
 )=====";
- 
+
 WiFiServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
- 
-char ssid[] = "Popiejopie";  // use your own network ssid and password
-char pass[] = "bCn1N5Hq";
- 
-CRGB leds[NUM_LEDS];
 
-void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length)
+char ssid[] = "Popiejopie"; // use your own network ssid and password
+char pass[] = "bCn1N5Hq";
+
+CRGB leds[NUM_LEDS];
+uint8_t currentTargetColor[3];
+
+void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
 {
-  if((type == WStype_BIN || type == WStype_TEXT) && length == 3)
+  if ((type == WStype_BIN || type == WStype_TEXT) && length == 3)
   {
-    for(uint8_t i = 0; i < NUM_LEDS; i++) {
-      leds[i].r = payload[0];
-      leds[i].g = payload[1];
-      leds[i].b = payload[2];
-    }
-    FastLED.show();
+    memcpy(currentTargetColor, payload, length);
   }
-  else 
+  else
   {
-    Serial.print("WStype = ");   Serial.println(type);  
+    Serial.print("WStype = ");
+    Serial.println(type);
     Serial.print("WS payload = ");
-    for(int i = 0; i < length; i++) { Serial.print((char) payload[i]); }
+    for (int i = 0; i < length; i++)
+    {
+      Serial.print((char)payload[i]);
+    }
     Serial.println();
- 
   }
 }
 
-void initLeds() {
+void initLeds()
+{
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
 }
 
 void setup()
 {
   initLeds();
- 
+
   Serial.begin(115200);
   Serial.println();
   Serial.println("Serial started at 115200");
   Serial.println();
- 
+
   // Connect to a WiFi network
-  Serial.print(F("Connecting to "));  Serial.println(ssid);
-  WiFi.begin(ssid,pass);
- 
+  Serial.print(F("Connecting to "));
+  Serial.println(ssid);
+  WiFi.begin(ssid, pass);
+
   // connection with timeout
-  int count = 0; 
-  while ( (WiFi.status() != WL_CONNECTED) && count < 17) 
+  int count = 0;
+  while ((WiFi.status() != WL_CONNECTED) && count < 17)
   {
-      Serial.print(".");  delay(500);  count++;
+    Serial.print(".");
+    delay(500);
+    count++;
   }
- 
+
   if (WiFi.status() != WL_CONNECTED)
-  { 
-     Serial.println("");  Serial.print("Failed to connect to ");  Serial.println(ssid);
-     while(1);
+  {
+    Serial.println("");
+    Serial.print("Failed to connect to ");
+    Serial.println(ssid);
+    while (1)
+      ;
   }
- 
+
   Serial.println("");
-  Serial.println(F("[CONNECTED]"));   Serial.print("[IP ");  Serial.print(WiFi.localIP()); 
+  Serial.println(F("[CONNECTED]"));
+  Serial.print("[IP ");
+  Serial.print(WiFi.localIP());
   Serial.println("]");
- 
+
   // start a server
   server.begin();
   Serial.println("Server started");
- 
+
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
 }
- 
+
+void ledTick()
+{
+  if(currentTargetColor[0] > leds[0].r) {
+    leds[0].r += 1;
+  }
+  else if(currentTargetColor[0] < leds[0].r) {
+    leds[0].r -= 1;
+  }
+
+  if(currentTargetColor[1] > leds[0].g) {
+    leds[0].g += 1;
+  }
+  else if(currentTargetColor[1] < leds[0].g) {
+    leds[0].g -= 1;
+  }
+
+  if(currentTargetColor[2] > leds[0].b) {
+    leds[0].b += 1;
+  }
+  else if(currentTargetColor[2] < leds[0].b) {
+    leds[0].b -= 1;
+  }
+  
+  for (uint8_t i = 1; i < NUM_LEDS; i++)
+  {
+    leds[i].r = leds[0].r;
+    leds[i].g = leds[0].g;
+    leds[i].b = leds[0].b;
+  }
+  FastLED.show();
+}
+
 void loop()
 {
-    webSocket.loop();
- 
-    WiFiClient client = server.available();     // Check if a client has connected
-    if (!client)  {  return;  }
- 
-    client.flush();
-    client.print( header );
-    client.print( html_1 ); 
- 
-    delay(5);
+  webSocket.loop();
+  if(millis() % 25 == 0) {
+    ledTick();
+  }
+
+  WiFiClient client = server.available(); // Check if a client has connected
+  if (!client)
+  {
+    return;
+  }
+
+  client.flush();
+  client.print(header);
+  client.print(html_1);
+
+  delay(5);
 }
