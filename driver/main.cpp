@@ -56,7 +56,7 @@ void sendColor(uint8_t rgb[]) {
 int main(int, char **)
 {
     initSocket();
-    uint8_t gridSize = 25;
+    uint8_t gridSize = 100;
     XColor c;
     Display *d = XOpenDisplay((char *)NULL);
     Screen *s = DefaultScreenOfDisplay(d);
@@ -86,13 +86,20 @@ int main(int, char **)
                 avgColorBuf[2] += ((c.blue / 256) / totalPixelsMeasure);
             }
         }
+        bool shouldSendData = false;
         for(uint8_t i = 0; i < 3; i++) {
             if(abs(avgColorBuf[i] - avgColorBufOld[i]) > 5) {
-                uint8_t rgb[] { (uint8_t) avgColorBuf[0], (uint8_t) avgColorBuf[1], (uint8_t) avgColorBuf[2] };
-                memcpy(&avgColorBufOld, &avgColorBuf, sizeof(avgColorBufOld));
-                sendColor(rgb);
+                shouldSendData = true;
                 break;
             }
+        }
+        if(shouldSendData) {
+            uint8_t rgb[] { (uint8_t) avgColorBuf[0], (uint8_t) avgColorBuf[1], (uint8_t) avgColorBuf[2] };
+            memcpy(&avgColorBufOld, &avgColorBuf, sizeof(avgColorBufOld));
+            sendColor(rgb);
+        }
+        else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
     return 0;

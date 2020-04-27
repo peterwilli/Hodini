@@ -1,2 +1,2 @@
-#define NUM_LEDS 5
+#define NUM_LEDS 60
 #define DATA_PIN 4
