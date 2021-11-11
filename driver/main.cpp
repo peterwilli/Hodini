@@ -9,7 +9,6 @@
 
 #include <iostream>
 #define VERSION "0.1"
-std::string uri = "ws://192.168.1.8:81";
 using namespace std;
 
 typedef websocketpp::client<websocketpp::config::asio_client> client;
@@ -20,7 +19,7 @@ void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
 	std::cout << msg->get_payload() << std::endl;
 }
 
-uint8_t initSocket() {
+uint8_t initSocket(std::string uri) {
     // Set logging to be pretty verbose (everything except message payloads)
     // c.set_access_channels(websocketpp::log::alevel::all);
     // c.clear_access_channels(websocketpp::log::alevel::frame_payload);
@@ -53,9 +52,11 @@ void sendColor(uint8_t rgb[]) {
     con->send(rgb, 3, websocketpp::frame::opcode::binary);
 }
 
-int main(int, char **)
+int main(int argc, char* argv[])
 {
-    initSocket();
+    std::vector<std::string> params(argv + 1, argv+argc);
+    std::string uri = params[0];
+    initSocket(uri);
     uint8_t gridSize = 100;
     XColor c;
     Display *d = XOpenDisplay((char *)NULL);
